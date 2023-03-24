@@ -4,7 +4,7 @@ dual-boot iOS 11.4.1-15.x with latest SEP.
 ## What is this?
 This is a tool that will patch the kernel to make the latest SEP "compatible" with lower versions, all SEP related things like passcode, TouchID, FaceID, etc. are broken, and there are other caveats, read below. This is a proof of concept, and I'm sure a lot of these patches are unnecessary, but I'm just publishing what I used to get it working.
 
-## Warning
+## Warning
 I am not responsible for any damage caused to anything, use at your own risk, this is not meant to be end-user friendly, and I'm not going to provide support for this.
 
 ## Caveats
