@@ -147,7 +147,7 @@ int get_funny_patches(void *kbuf, size_t klen)
 
     //SEP/OS failed to boot at stage
     printf("[*] Patching SEP/OS failed to boot at stage\n");
-    str_stuff = memmem(kbuf, klen, "\"SEP/OS failed to boot at stage %d\\nFirmware type: %s\"@/BuildRoot/Library/Caches/com.apple.xbs/Sources/AppleSEPManager/AppleSEPManager-302.70.5/AppleSEPManagerARM.cpp:1646", 96);
+    str_stuff = memmem(kbuf, klen, "\"SEP/OS failed to boot at stage %d\\nFirmware type: %s\"@/BuildRoot/Library/Caches/com.apple.xbs/Sources/AppleSEPManager", 96);
     if (!str_stuff)
     {
         printf("[-] Failed to find SEP/OS failed to boot at stage\n");
