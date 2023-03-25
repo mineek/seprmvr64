@@ -63,6 +63,37 @@ int get_amfi_out_of_my_way_patch(void* kbuf,size_t klen) {
     return 0;
 }
 
+int patch_simple(void* kbuf, size_t klen, char* string, int len) {
+    str_stuff = memmem(kbuf, klen, string, len);
+    if (!str_stuff)
+    {
+        printf("[-] Failed to find the patch string\n");
+        return -1;
+    }
+    int done = 0;
+    int initial = 0;
+    while (!done)
+    {
+        if (initial == 0)
+        {
+            xref_stuff = xref64(kbuf, 0, klen, (addr_t)GET_OFFSET(klen, str_stuff));
+            initial = 1;
+        }
+        else {
+            xref_stuff = xref64(kbuf, xref_stuff + 0x4, klen, (addr_t)GET_OFFSET(klen, str_stuff));
+        }
+        if (!xref_stuff)
+        {
+            done = 1;
+            break;
+        }
+        *(uint32_t *)(kbuf + xref_stuff) = 0x52800000;
+        *(uint32_t *)(kbuf + xref_stuff + 0x4) = 0xD65F03C0;
+        printf("[+] Patched at %p\n", (void*)xref_stuff);
+    }
+    return 0;
+}
+
 int get_funny_patches(void *kbuf, size_t klen)
 {
     printf("%s: Starting...\n", __FUNCTION__);
