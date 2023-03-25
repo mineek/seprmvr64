@@ -77,7 +77,7 @@ I am not responsible for any damage caused to anything, use at your own risk, th
 1. Use `gaster` to pwn your device:
     * `gaster pwn`
     * `gaster reset`
-2. Send over your iBSS and iBEC using `irecovery -f iBSS.img4 and `irecovery -f iBEC.img4`
+2. Send over your iBSS and iBEC using `irecovery -f iBSS.img4` and `irecovery -f iBEC.img4`
 3. Send over your devicetree using `irecovery -f devicetree.img4`, then use `irecovery -c devicetree` to load it.
 4. If you have a trustcache, send it over using `irecovery -f trustcache.img4`, then use `irecovery -c firmware` to load it.
 5. Finally, send over your kernelcache using `irecovery -f kernelcache.img4`, then use `irecovery -c bootx` to boot, reminder that first boot with progress bar can take upto 1 hour, so be patient.
