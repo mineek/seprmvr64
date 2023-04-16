@@ -13,6 +13,7 @@ I am not responsible for any damage caused to anything, use at your own risk, th
 * TouchID / Passcode / FaceID are all broken, you can't use them.
 * You have a NULL passcode, every time you're asked for a passcode, any input should be accepted.
 * First boot ( the one with progress bar ) can take upto 1 hour, subsequent boots are normal.
+* For some reason, your mainOS has a VERY high chance of bootlooping, please only use this on a test device you're comfortable losing data off.
 
 ## Guide
 1. Begin with downloading a IPSW for your desired iOS version, and extract it.
