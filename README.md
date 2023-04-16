@@ -52,7 +52,7 @@ I am not responsible for any damage caused to anything, use at your own risk, th
 19. Copy over the staged_system_apps to make them work: `cp -av /mnt9/staged_system_apps/* /mnt8/Applications/`
 20. We're almost done installing! At this point, you'll boot into the Setup screen and are unable to activate, to get SpringBoard you'll need a way to skip Setup, I won't be linking to any of these methods, so figure it out yourself.
 21. Finally, reboot:
-    * `/usr/sbin/nvram auto-boot=true`
+    * `/usr/sbin/nvram auto-boot=false`
     * `/sbin/reboot`
 
 ### Boot files
