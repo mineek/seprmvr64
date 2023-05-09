@@ -98,9 +98,6 @@ int get_funny_patches(void *kbuf, size_t klen)
 {
     printf("%s: Starting...\n", __FUNCTION__);
 
-    void* xnu = memmem(kbuf,klen,"root:xnu-",9);
-    int kernel_vers = atoi(xnu+9);
-
     printf("[*] Patching sks timeout strike\n");
     str_stuff = memmem(kbuf, klen, "AppleKeyStore: sks timeout strike %d", 36);
     if (!str_stuff)
@@ -143,18 +140,16 @@ int get_funny_patches(void *kbuf, size_t klen)
     *(uint32_t *)(kbuf + xref_stuff) = 0xD2800000;
     printf("[+] Patched AppleKeyStore: operation failed\n");
 
-    if (kernel_vers == 4903) {
-        // did everything needed already for iOS 12
-        printf("%s: quitting...\n", __FUNCTION__);
-        return 0;
-    }
-
     printf("[*] Patching AppleMesaSEPDriver\n");
     str_stuff = memmem(kbuf, klen, "ERROR: %s: AssertMacros: %s (value = 0x%lx), %s file: %s, line: %d", 66);
     if (!str_stuff)
     {
-        printf("[-] Failed to find AppleMesaSEPDriver\n");
-        return -1;
+        str_stuff = memmem(kbuf, klen, "AssertMacros: %s (value = 0x%lx), %s file: %s, line: %d", 55);
+        if (!str_stuff)
+        {
+            printf("[-] Failed to find AppleMesaSEPDriver\n");
+            return -1;
+        }
     }
     xref_stuff = xref64(kbuf, 0, klen, (addr_t)GET_OFFSET(klen, str_stuff));
     beg_func = bof64(kbuf, 0, xref_stuff);
@@ -178,11 +173,15 @@ int get_funny_patches(void *kbuf, size_t klen)
 
     //SEP/OS failed to boot at stage
     printf("[*] Patching SEP/OS failed to boot at stage\n");
-    str_stuff = memmem(kbuf, klen, "\"SEP/OS failed to boot at stage %d\\nFirmware type: %s\"@/BuildRoot/Library/Caches/com.apple.xbs/Sources/AppleSEPManager", 96);
+    str_stuff = memmem(kbuf, klen, "\"SEP/OS failed to boot at stage %d\\nFirmware type: %s\"@/BuildRoot/Library/Caches/com.apple.xbs/Sources/AppleSEPManager/AppleSEPManager-302.70.5/AppleSEPManagerARM.cpp:1646", 96);
     if (!str_stuff)
     {
-        printf("[-] Failed to find SEP/OS failed to boot at stage\n");
-        return -1;
+        str_stuff = memmem(kbuf, klen, "\"SEP/OS failed to boot\"@/BuildRoot/Library/Caches/com.apple.xbs/Sources/AppleSEPManager/AppleSEPManager", 92);
+        if (!str_stuff)
+        {
+            printf("[-] Failed to find SEP/OS failed to boot at stage\n");
+            return -1;
+        }
     }
     xref_stuff = xref64(kbuf, 0, klen, (addr_t)GET_OFFSET(klen, str_stuff));
     beg_func = bof64(kbuf, 0, xref_stuff);
@@ -203,28 +202,18 @@ int get_funny_patches(void *kbuf, size_t klen)
     *(uint32_t *)(kbuf + beg_func) = 0x52800000;
     *(uint32_t *)(kbuf + beg_func + 0x4) = 0xD65F03C0;
     printf("[+] Patched AppleBiometricSensor: RECOVERY\n");
-
-    //ERROR: %s: _sensorErrorCounter:%u --> reset\n
-    printf("[*] Patching _sensorErrorCounter: --> reset\n");
-    str_stuff = memmem(kbuf, klen, "ERROR: %s: _sensorErrorCounter:%u --> reset\\n", 41);
-    if (!str_stuff)
-    {
-        printf("[-] Failed to find _sensorErrorCounter: --> reset\n");
-        return -1;
-    }
-    xref_stuff = xref64(kbuf, 0, klen, (addr_t)GET_OFFSET(klen, str_stuff));
-    beg_func = bof64(kbuf, 0, xref_stuff);
-    *(uint32_t *)(kbuf + beg_func) = 0x52800000;
-    *(uint32_t *)(kbuf + beg_func + 0x4) = 0xD65F03C0;
-    printf("[+] Patched _sensorErrorCounter: --> reset\n");
     
     //ERROR: %s: AssertMacros: %s (value = 0x%lx), %s file: %s, line: %d\n\n
     printf("[*] Patching ERROR: AssertMacros\n");
     str_stuff = memmem(kbuf, klen, "ERROR: %s: AssertMacros: %s (value = 0x%lx), %s file: %s, line: %d", 66);
     if (!str_stuff)
     {
-        printf("[-] Failed to find ERROR: AssertMacros\n");
-        return -1;
+        str_stuff = memmem(kbuf, klen, "AssertMacros: %s (value = 0x%lx), %s file: %s, line: %d", 55);
+        if (!str_stuff)
+        {
+            printf("[-] Failed to find ERROR: AssertMacros\n");
+            return -1;
+        }
     }
     int done = 0;
     while (!done)
@@ -247,6 +236,30 @@ int get_funny_patches(void *kbuf, size_t klen)
     }
     printf("[+] Patched ERROR: AssertMacros\n");
 
+    ///BuildRoot/Library/Caches/com.apple.xbs/Sources/AppleCredentialManager/AppleCredentialManager-195.70.8/AppleCredentialManager/AppleCredentialManager.cpp
+    printf("[*] Patching AppleCredentialManager\n");
+    str_stuff = memmem(kbuf, klen, "/BuildRoot/Library/Caches/com.apple.xbs/Sources/AppleCredentialManager/AppleCredentialManager-195/AppleCredentialManager/AppleCredentialManager.cpp", 147);
+    if (!str_stuff)
+    {
+        printf("[-] Failed to find AppleCredentialManager\n");
+        return -1;
+    }
+    done = 0;
+    while (!done)
+    {
+        xref_stuff = xref64(kbuf, xref_stuff + 1, klen, (addr_t)GET_OFFSET(klen, str_stuff));
+        if (xref_stuff == 0)
+        {
+            done = 1;
+            break;
+        }
+        beg_func = bof64(kbuf, 0, xref_stuff);
+        *(uint32_t *)(kbuf + beg_func) = 0x52800000;
+        *(uint32_t *)(kbuf + beg_func + 0x4) = 0xD65F03C0;
+        printf("[+] Patched AppleCredentialManager at 0x%llx\n", beg_func);
+    }
+    printf("[+] Patched AppleCredentialManager\n");
+
     printf("%s: quitting...\n", __FUNCTION__);
 
     return 0;
@@ -254,11 +267,10 @@ int get_funny_patches(void *kbuf, size_t klen)
 
 int main(int argc, char *argv[])
 {
-
+    printf("seprmvr64\n");
+    printf("by mineek\n");
     if (argc < 3)
     {
-        printf("seprmvr64\n");
-        printf("by mineek\n");
         printf("Usage: kcache.raw kcache.patched [--skip-amfi]\n");
         return 0;
     }

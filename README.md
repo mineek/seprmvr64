@@ -12,7 +12,7 @@ I am not responsible for any damage caused to anything, use at your own risk, th
 * Encrypted WiFi networks will always say "incorrect password" when trying to connect, use a open network.
 * TouchID / Passcode / FaceID are all broken, you can't use them.
 * You have a NULL passcode, every time you're asked for a passcode, any input should be accepted.
-* First boot ( the one with progress bar ) can take upto 1 hour, subsequent boots are normal.
+* First boot ( the one with progress bar ) can take upto 1 hour on some versions, subsequent boots are normal.
 * For some reason, your mainOS has a VERY high chance of bootlooping, please only use this on a test device you're comfortable losing data off.
 
 ## Guide
@@ -38,7 +38,7 @@ I am not responsible for any damage caused to anything, use at your own risk, th
     * `/usr/bin/mount_filesystems`
     * `/sbin/mount_apfs /dev/disk0s1s8 /mnt8/`
     * `/sbin/mount_apfs /dev/disk0s1s9 /mnt9/`
-12. Copy over `/var` from the rootfs partition to the var partition: `cp -av /mnt8/private/var/* /mnt9/`
+12. Move over `/var` from the rootfs partition to the var partition: `mv -v /mnt8/private/var/* /mnt9/`
 13. Copy over preboot: `cp -av /mnt6/$(cat /mnt6/active)/* /mnt8/`
 14. Create some folders required for booting:
     * `mkdir -p /mnt8/private/xarts`
@@ -50,9 +50,8 @@ I am not responsible for any damage caused to anything, use at your own risk, th
     * `/sbin/mount_apfs /dev/disk0s1s5 /mnt5/`
     * `cp -av /mnt5/FactoryData/* /mnt8/`
 18. Change fstab to point to the new partition, and change `hfs` to `apfs`: `nano /mnt8/etc/fstab`
-19. Copy over the staged_system_apps to make them work: `cp -av /mnt9/staged_system_apps/* /mnt8/Applications/`
-20. We're almost done installing! At this point, you'll boot into the Setup screen and are unable to activate, to get SpringBoard you'll need a way to skip Setup, I won't be linking to any of these methods, so figure it out yourself.
-21. Finally, reboot:
+19. We're almost done installing! At this point, you'll boot into the Setup screen and are unable to activate, to get SpringBoard you'll need a way to skip Setup, I won't be linking to any of these methods, so figure it out yourself.
+20. Finally, reboot:
     * `/usr/sbin/nvram auto-boot=false`
     * `/sbin/reboot`
 
