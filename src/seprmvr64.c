@@ -376,11 +376,11 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    void *orig_dyld_buf = kbuf;
+    void *orig_kbuf = kbuf;
     if (magic == 0xbebafeca) {
         kbuf = macho_find_arch(kbuf, CPU_TYPE_ARM64);
         if (!kbuf) {
-            free(kbuf);
+            free(orig_kbuf);
             return 1;
         }
     }
@@ -395,11 +395,11 @@ int main(int argc, char *argv[])
 
     fp = fopen(out, "wb+");
 
-    fwrite(kbuf, 1, klen, fp);
+    fwrite(orig_kbuf, 1, klen, fp);
     fflush(fp);
     fclose(fp);
 
-    free(kbuf);
+    free(orig_kbuf);
 
     printf("[*] Wrote patched file to %s\n", out);
 
