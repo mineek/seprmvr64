@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include "plooshfinder.h"
 #include "plooshfinder32.h"
-#include "macho.h"
+#include "formats/macho.h"
 
 void *kbuf;
 size_t klen;
@@ -42,7 +42,7 @@ void *bof64(void *ptr) {
     return 0;
 }
 
-bool patch_sks(struct pf_patch32_t patch, uint32_t *stream) {
+bool patch_sks(struct pf_patch_t *patch, uint32_t *stream) {
     char *str = pf_follow_xref(kbuf, stream);
 
     if (strcmp(str, "AppleKeyStore: sks timeout strike %d\n") == 0) {
@@ -68,7 +68,7 @@ bool patch_sks(struct pf_patch32_t patch, uint32_t *stream) {
     return false;
 }
 
-bool patch_smgr(struct pf_patch32_t patch, uint32_t *stream) {
+bool patch_smgr(struct pf_patch_t *patch, uint32_t *stream) {
     char *str = pf_follow_xref(kbuf, stream);
 
     if (strncmp(str, "\"SEP Panic:", 11) == 0) {
@@ -100,7 +100,7 @@ bool patch_smgr(struct pf_patch32_t patch, uint32_t *stream) {
     return false;
 }
 
-bool patch_abs(struct pf_patch32_t patch, uint32_t *stream) {
+bool patch_abs(struct pf_patch_t *patch, uint32_t *stream) {
     char *str = pf_follow_xref(kbuf, stream);
 
     if (strcmp(str, "AppleBiometricSensor: RECOVERY: Reason %d, Last command 0x%x\n") == 0) {
@@ -116,7 +116,7 @@ bool patch_abs(struct pf_patch32_t patch, uint32_t *stream) {
     return false;
 }
 
-bool patch_mesa(struct pf_patch32_t patch, uint32_t *stream) {
+bool patch_mesa(struct pf_patch_t *patch, uint32_t *stream) {
     char *str = pf_follow_xref(kbuf, stream);
 
     if ((strcmp(str, "ERROR: %s: AssertMacros: %s (value = 0x%lx), %s file: %s, line: %d\n\n\n") == 0) ||
@@ -139,7 +139,7 @@ bool patch_mesa(struct pf_patch32_t patch, uint32_t *stream) {
     return false;
 }
 
-bool patch_acm(struct pf_patch32_t patch, uint32_t *stream) {
+bool patch_acm(struct pf_patch_t *patch, uint32_t *stream) {
     char *str = pf_follow_xref(kbuf, stream);
 
     if (strncmp(str, "/BuildRoot/Library/Caches/com.apple.xbs/Sources/AppleCredentialManager/AppleCredentialManager-", 94) == 0) {
@@ -178,15 +178,15 @@ void patch_sep() {
         0xff800000
     };
 
-    struct pf_patch32_t sks_patch = pf_construct_patch32(str_matches, str_masks, sizeof(str_matches) / sizeof(uint32_t), (void *) patch_sks);
+    struct pf_patch_t sks_patch = pf_construct_patch(str_matches, str_masks, sizeof(str_matches) / sizeof(uint32_t), (void *) patch_sks);
 
-    struct pf_patch32_t sks_patches[] = {
+    struct pf_patch_t sks_patches[] = {
         sks_patch
     };
 
-    struct pf_patchset32_t sks_patchset = pf_construct_patchset32(sks_patches, sizeof(sks_patches) / sizeof(struct pf_patch32_t), (void *) pf_find_maskmatch32);
+    struct pf_patchset_t sks_patchset = pf_construct_patchset(sks_patches, sizeof(sks_patches) / sizeof(struct pf_patch_t), (void *) pf_find_maskmatch32);
 
-    pf_patchset_emit32(sks_text_buf, sks_text_len, sks_patchset);
+    pf_patchset_emit(sks_text_buf, sks_text_len, sks_patchset);
 
     struct mach_header_64 *smgr_kext = macho_find_kext(kbuf, "com.apple.driver.AppleSEPManager");
     if (!smgr_kext) return;
@@ -197,15 +197,15 @@ void patch_sep() {
     uint64_t smgr_text_len = smgr_text->size;
 
 
-    struct pf_patch32_t smgr_patch = pf_construct_patch32(str_matches, str_masks, sizeof(str_matches) / sizeof(uint32_t), (void *) patch_smgr);
+    struct pf_patch_t smgr_patch = pf_construct_patch(str_matches, str_masks, sizeof(str_matches) / sizeof(uint32_t), (void *) patch_smgr);
 
-    struct pf_patch32_t smgr_patches[] = {
+    struct pf_patch_t smgr_patches[] = {
         smgr_patch
     };
 
-    struct pf_patchset32_t smgr_patchset = pf_construct_patchset32(smgr_patches, sizeof(smgr_patches) / sizeof(struct pf_patch32_t), (void *) pf_find_maskmatch32);
+    struct pf_patchset_t smgr_patchset = pf_construct_patchset(smgr_patches, sizeof(smgr_patches) / sizeof(struct pf_patch_t), (void *) pf_find_maskmatch32);
 
-    pf_patchset_emit32(smgr_text_buf, smgr_text_len, smgr_patchset);
+    pf_patchset_emit(smgr_text_buf, smgr_text_len, smgr_patchset);
 
     struct mach_header_64 *abs_kext = macho_find_kext(kbuf, "com.apple.driver.AppleBiometricSensor");
     if (!abs_kext) return;
@@ -216,15 +216,15 @@ void patch_sep() {
     uint64_t abs_text_len = abs_text->size;
 
 
-    struct pf_patch32_t abs_patch = pf_construct_patch32(str_matches, str_masks, sizeof(str_matches) / sizeof(uint32_t), (void *) patch_abs);
+    struct pf_patch_t abs_patch = pf_construct_patch(str_matches, str_masks, sizeof(str_matches) / sizeof(uint32_t), (void *) patch_abs);
 
-    struct pf_patch32_t abs_patches[] = {
+    struct pf_patch_t abs_patches[] = {
         abs_patch
     };
 
-    struct pf_patchset32_t abs_patchset = pf_construct_patchset32(abs_patches, sizeof(abs_patches) / sizeof(struct pf_patch32_t), (void *) pf_find_maskmatch32);
+    struct pf_patchset_t abs_patchset = pf_construct_patchset(abs_patches, sizeof(abs_patches) / sizeof(struct pf_patch_t), (void *) pf_find_maskmatch32);
 
-    pf_patchset_emit32(abs_text_buf, abs_text_len, abs_patchset);
+    pf_patchset_emit(abs_text_buf, abs_text_len, abs_patchset);
 
     struct mach_header_64 *mesa_kext = macho_find_kext(kbuf, "com.apple.driver.AppleMesaSEPDriver");
     if (!mesa_kext) return;
@@ -235,15 +235,15 @@ void patch_sep() {
     uint64_t mesa_text_len = mesa_text->size;
 
 
-    struct pf_patch32_t mesa_patch = pf_construct_patch32(str_matches, str_masks, sizeof(str_matches) / sizeof(uint32_t), (void *) patch_mesa);
+    struct pf_patch_t mesa_patch = pf_construct_patch(str_matches, str_masks, sizeof(str_matches) / sizeof(uint32_t), (void *) patch_mesa);
 
-    struct pf_patch32_t mesa_patches[] = {
+    struct pf_patch_t mesa_patches[] = {
         mesa_patch
     };
 
-    struct pf_patchset32_t mesa_patchset = pf_construct_patchset32(mesa_patches, sizeof(mesa_patches) / sizeof(struct pf_patch32_t), (void *) pf_find_maskmatch32);
+    struct pf_patchset_t mesa_patchset = pf_construct_patchset(mesa_patches, sizeof(mesa_patches) / sizeof(struct pf_patch_t), (void *) pf_find_maskmatch32);
 
-    pf_patchset_emit32(mesa_text_buf, mesa_text_len, mesa_patchset);
+    pf_patchset_emit(mesa_text_buf, mesa_text_len, mesa_patchset);
 
     struct mach_header_64 *acm_kext = macho_find_kext(kbuf, "com.apple.driver.AppleSEPCredentialManager");
     if (!acm_kext) return;
@@ -254,18 +254,18 @@ void patch_sep() {
     uint64_t acm_text_len = acm_text->size;
 
 
-    struct pf_patch32_t acm_patch = pf_construct_patch32(str_matches, str_masks, sizeof(str_matches) / sizeof(uint32_t), (void *) patch_acm);
+    struct pf_patch_t acm_patch = pf_construct_patch(str_matches, str_masks, sizeof(str_matches) / sizeof(uint32_t), (void *) patch_acm);
 
-    struct pf_patch32_t acm_patches[] = {
+    struct pf_patch_t acm_patches[] = {
         acm_patch
     };
 
-    struct pf_patchset32_t acm_patchset = pf_construct_patchset32(acm_patches, sizeof(acm_patches) / sizeof(struct pf_patch32_t), (void *) pf_find_maskmatch32);
+    struct pf_patchset_t acm_patchset = pf_construct_patchset(acm_patches, sizeof(acm_patches) / sizeof(struct pf_patch_t), (void *) pf_find_maskmatch32);
 
-    pf_patchset_emit32(acm_text_buf, acm_text_len, acm_patchset);
+    pf_patchset_emit(acm_text_buf, acm_text_len, acm_patchset);
 }
 
-bool patch_amfi_old(struct pf_patch32_t patch, uint32_t *stream) {
+bool patch_amfi_old(struct pf_patch_t *patch, uint32_t *stream) {
     char *str = pf_follow_xref(kbuf, stream);
 
     if (strcmp(str, "entitlements too small") == 0) {
@@ -315,22 +315,22 @@ void patch_amfi() {
             0xff800000
         };
 
-        struct pf_patch32_t amfi_patch = pf_construct_patch32(str_matches, str_masks, sizeof(str_matches) / sizeof(uint32_t), (void *) patch_amfi_old);
+        struct pf_patch_t amfi_patch = pf_construct_patch(str_matches, str_masks, sizeof(str_matches) / sizeof(uint32_t), (void *) patch_amfi_old);
 
-        struct pf_patch32_t amfi_patches[] = {
+        struct pf_patch_t amfi_patches[] = {
             amfi_patch
         };
 
-        struct pf_patchset32_t amfi_patchset = pf_construct_patchset32(amfi_patches, sizeof(amfi_patches) / sizeof(struct pf_patch32_t), (void *) pf_find_maskmatch32);
+        struct pf_patchset_t amfi_patchset = pf_construct_patchset(amfi_patches, sizeof(amfi_patches) / sizeof(struct pf_patch_t), (void *) pf_find_maskmatch32);
 
-        pf_patchset_emit32(amfi_text_buf, amfi_text_len, amfi_patchset);
+        pf_patchset_emit(amfi_text_buf, amfi_text_len, amfi_patchset);
 
         return;
     }
 
     uint32_t *trustcache_stream = macho_va_to_ptr(kbuf, trustcache->offset);
 
-    trustcache_stream[0] = 0x320003e0;
+    trustcache_stream[0] = 0x320003e0; // orr w0, wzr, 0x1
     trustcache_stream[1] = ret;
     printf("[+] Patched AMFI at 0x%lx\n", trustcache->offset);
 }
