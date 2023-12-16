@@ -63,8 +63,15 @@ bool patch_sks(struct pf_patch_t *patch, uint32_t *stream) {
         blr[0] = 0xd2800000;
         printf("[+] Patched AppleKeyStore: operation failed at 0x%lx\n", macho_ptr_to_va(kbuf, blr));
         return true;
-    }
+    } else if (strncmp(str, "AppleKeyStore: operation failed (pid: %d sel: %d ret: %x \'%d\')", 62) == 0) {
+        uint32_t *begin = bof64(stream);
 
+        begin[0] = 0x52800000;
+        begin[1] = ret;
+
+        printf("[+] Patched AppleKeyStore: operation failed at 0x%lx\n", macho_ptr_to_va(kbuf, begin));
+        return true;
+    }
     return false;
 }
 
