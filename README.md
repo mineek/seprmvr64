@@ -1,5 +1,5 @@
 # seprmvr64
-dual-boot iOS 11.4.1-15.x with latest SEP.
+dual-boot iOS 10.3.3-14.x with latest SEP.
 
 ## What is this?
 This is a tool that will patch the kernel to make the latest SEP "compatible" with lower versions, all SEP related things like passcode, TouchID, FaceID, etc. are broken, and there are other caveats, read below. This is a proof of concept, and I'm sure a lot of these patches are unnecessary, but I'm just publishing what I used to get it working.
@@ -8,17 +8,17 @@ This is a tool that will patch the kernel to make the latest SEP "compatible" wi
 I am not responsible for any damage caused to anything, use at your own risk, this is not meant to be end-user friendly, and I'm not going to provide support for this.
 
 ## Caveats
-* Does NOT work on 16 GB devices, because we are dual-booting iOS, and 2 iOS installations take up around 16 GB of space, which makes both iOS installations impossible to use.
+* Does NOT work on 16 GB devices, because we are dual-booting iOS, and 2 iOS installations take up around 16 GB of space, which makes both iOS installations impossible to use. Unless you're already on iOS 12 for example, which uses lower storage.
 * Encrypted WiFi networks will always say "incorrect password" when trying to connect, use a open network.
 * TouchID / Passcode / FaceID are all broken, you can't use them.
 * You have a NULL passcode, every time you're asked for a passcode, any input should be accepted.
-* First boot ( the one with progress bar ) can take upto 1 hour on some versions, subsequent boots are normal.
-* For some reason, your mainOS has a VERY high chance of bootlooping, please only use this on a test device you're comfortable losing data off.
+* ~~First boot ( the one with progress bar ) can take upto 1 hour on some versions, subsequent boots are normal.~~ ( this has since been fixed, ymmv )
+* For some reason, your mainOS has a VERY high chance of bootlooping, please only use this on a test device you're comfortable losing data off. ( Also, ymmv, it may or may not bootloop. )
 
 ## Guide
 1. Begin with downloading a IPSW for your desired iOS version, and extract it.
 2. Run `asr -source "ipsw/$(/usr/bin/plutil -extract "BuildIdentities".0."Manifest"."OS"."Info"."Path" xml1 -o - ipsw/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | head -1)" -target out.dmg --embed -erase -noprompt --chunkchecksum --puppetstrings` to create a asr image.
-3. Clone [sshrd_script](https://github.com/verygenericname/sshrd_script) and boot into the SSH ramdisk, make sure you create the ssh ramdisk with 14.3.
+3. Clone [sshrd_script](https://github.com/verygenericname/sshrd_script) and boot into the SSH ramdisk, make sure you create the ssh ramdisk with the version you're currently on.
 4. Run `/usr/bin/mount_filesystems` in the SSH ramdisk to mount the filesystems.
 5. Create new partitions for dual-booted iOS:
     * `/sbin/newfs_apfs -o role=i -A -v SystemX /dev/disk0s1`
