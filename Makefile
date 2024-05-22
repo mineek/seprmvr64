@@ -4,7 +4,6 @@ OBJS = $(patsubst src/%,$(OBJDIR)/%,$(SRC:.c=.o))
 PLOOSHFINDER = plooshfinder/libplooshfinder.a
 INCLDIRS = -I./include -I./plooshfinder/include
 
-LDFLAGS ?= -fuse-ld=lld
 LDFLAGS += -L./plooshfinder
 CFLAGS ?= -O2
 CC := clang

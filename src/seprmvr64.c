@@ -86,14 +86,14 @@ bool patch_smgr(struct pf_patch_t *patch, uint32_t *stream) {
 
         printf("[+] Patched SEP Panicked at 0x%lx\n", macho_ptr_to_va(kbuf, begin));
         return true;
-    } else if (strcmp(str, "AppleSEP:WARNING: EP0 received unsolicited message 0x%016llx\n") == 0) {
-        uint32_t *begin = bof64(stream);
+    //} else if (strcmp(str, "AppleSEP:WARNING: EP0 received unsolicited message 0x%016llx\n") == 0) {
+    //    uint32_t *begin = bof64(stream);
 
-        begin[0] = 0x52800000;
-        begin[1] = ret;
+    //    begin[0] = 0x52800000;
+    //    begin[1] = ret;
 
-        printf("[+] Patched EP0 received unsolicited message at 0x%lx\n", macho_ptr_to_va(kbuf, begin));
-        return true;
+    //    printf("[+] Patched EP0 received unsolicited message at 0x%lx\n", macho_ptr_to_va(kbuf, begin));
+    //    return true;
     } else if (strncmp(str, "\"SEP/OS failed to boot", 22) == 0) {
         uint32_t *begin = bof64(stream);
 
@@ -127,7 +127,8 @@ bool patch_mesa(struct pf_patch_t *patch, uint32_t *stream) {
     char *str = pf_follow_xref(kbuf, stream);
 
     if ((strcmp(str, "ERROR: %s: AssertMacros: %s (value = 0x%lx), %s file: %s, line: %d\n\n\n") == 0) ||
-        (strcmp(str, "AssertMacros: %s (value = 0x%lx), %s file: %s, line: %d\n") == 0)) {
+        (strcmp(str, "AssertMacros: %s (value = 0x%lx), %s file: %s, line: %d\n") == 0) ||
+        (strcmp(str, "ERROR: %s: AssertMacros: %s (value = 0x%lx), %s file: %s, line: %d") == 0)) {
         uint32_t *begin = bof64(stream);
 
         if (begin[6] == 0xb4000293) {
@@ -214,33 +215,15 @@ void patch_sep() {
 
     pf_patchset_emit(smgr_text_buf, smgr_text_len, smgr_patchset);
 
-    struct mach_header_64 *abs_kext = macho_find_kext(kbuf, "com.apple.driver.AppleBiometricSensor");
-    if (!abs_kext) return;
-    struct section_64 *abs_text = macho_find_section(abs_kext, "__TEXT_EXEC", "__text");
-    if (!abs_text) return;
-
-    void *abs_text_buf = (void *) abs_kext + abs_text->offset;
-    uint64_t abs_text_len = abs_text->size;
-
-
-    struct pf_patch_t abs_patch = pf_construct_patch(str_matches, str_masks, sizeof(str_matches) / sizeof(uint32_t), (void *) patch_abs);
-
-    struct pf_patch_t abs_patches[] = {
-        abs_patch
-    };
-
-    struct pf_patchset_t abs_patchset = pf_construct_patchset(abs_patches, sizeof(abs_patches) / sizeof(struct pf_patch_t), (void *) pf_find_maskmatch32);
-
-    pf_patchset_emit(abs_text_buf, abs_text_len, abs_patchset);
-
     struct mach_header_64 *mesa_kext = macho_find_kext(kbuf, "com.apple.driver.AppleMesaSEPDriver");
-    if (!mesa_kext) return;
+    if (!mesa_kext) {
+        mesa_kext = macho_find_kext(kbuf, "com.apple.driver.ApplePearlSEPDriver");
+    }
     struct section_64 *mesa_text = macho_find_section(mesa_kext, "__TEXT_EXEC", "__text");
     if (!mesa_text) return;
 
     void *mesa_text_buf = (void *) mesa_kext + mesa_text->offset;
     uint64_t mesa_text_len = mesa_text->size;
-
 
     struct pf_patch_t mesa_patch = pf_construct_patch(str_matches, str_masks, sizeof(str_matches) / sizeof(uint32_t), (void *) patch_mesa);
 
@@ -270,6 +253,25 @@ void patch_sep() {
     struct pf_patchset_t acm_patchset = pf_construct_patchset(acm_patches, sizeof(acm_patches) / sizeof(struct pf_patch_t), (void *) pf_find_maskmatch32);
 
     pf_patchset_emit(acm_text_buf, acm_text_len, acm_patchset);
+
+    struct mach_header_64 *abs_kext = macho_find_kext(kbuf, "com.apple.driver.AppleBiometricSensor");
+    if (!abs_kext) return;
+    struct section_64 *abs_text = macho_find_section(abs_kext, "__TEXT_EXEC", "__text");
+    if (!abs_text) return;
+
+    void *abs_text_buf = (void *) abs_kext + abs_text->offset;
+    uint64_t abs_text_len = abs_text->size;
+
+
+    struct pf_patch_t abs_patch = pf_construct_patch(str_matches, str_masks, sizeof(str_matches) / sizeof(uint32_t), (void *) patch_abs);
+
+    struct pf_patch_t abs_patches[] = {
+        abs_patch
+    };
+
+    struct pf_patchset_t abs_patchset = pf_construct_patchset(abs_patches, sizeof(abs_patches) / sizeof(struct pf_patch_t), (void *) pf_find_maskmatch32);
+
+    pf_patchset_emit(abs_text_buf, abs_text_len, abs_patchset);
 }
 
 bool patch_amfi_old(struct pf_patch_t *patch, uint32_t *stream) {
