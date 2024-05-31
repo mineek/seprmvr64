@@ -1,4 +1,9 @@
 boot
+Kernel64Patcher
+kcache.patched
+kcache.pwn.seprmvr64
+kcache.patched.seprmvr64
+kcache.pwn
 research
 ipsw
 .DS_Store

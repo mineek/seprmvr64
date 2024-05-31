@@ -1,4 +1,4 @@
-SRC = $(wildcard src/*)
+SRC = src/Kernel64Patcher.c src/seprmvr64.c
 OBJDIR = obj
 OBJS = $(patsubst src/%,$(OBJDIR)/%,$(SRC:.c=.o))
 PLOOSHFINDER = plooshfinder/libplooshfinder.a
