@@ -190,6 +190,8 @@ int main(int argc, char **argv) {
                     //"AppleKeyStore starting (BUILT: %s %s)",
                     //"AppleKeyStore:Sending category unlock status with %d",
                     //"AppleKeyStore:Sending lock change %d"
+                    "\"Content Protection: uninitialized cnode %p\"",
+                    "cp_vnode_setclass"
                 };
                 for(int i = 0; i < sizeof(strings)/sizeof(strings[0]); i++) {
                     if(findandpatch(kernel_buf, kernel_len, strings[i]) != 0) {
@@ -212,6 +214,8 @@ int main(int argc, char **argv) {
                     //"AppleKeyStore starting (BUILT: %s %s)",
                     //"AppleKeyStore:Sending category unlock status with %d",
                     //"AppleKeyStore:Sending lock change %d"
+                    "\"Content Protection: uninitialized cnode %p\"",
+                    "cp_vnode_setclass"
                 };
                 for(int i = 0; i < sizeof(strings)/sizeof(strings[0]); i++) {
                     if(findandpatch(kernel_buf, kernel_len, strings[i]) != 0) {
@@ -221,7 +225,9 @@ int main(int argc, char **argv) {
             } else if (strcmp(argv[i+1], "10") == 0) {
                 void* strings[] = {
                     "\"SEP Panic\"",
-                    "AppleKeyStore: operation failed (pid: %d sel: %d ret: %x)"
+                    "AppleKeyStore: operation failed (pid: %d sel: %d ret: %x)",
+                    "\"Content Protection: uninitialized cnode %p\"",
+                    "cp_vnode_setclass"
                 };
                 for(int i = 0; i < sizeof(strings)/sizeof(strings[0]); i++) {
                     if(findandpatch(kernel_buf, kernel_len, strings[i]) != 0) {

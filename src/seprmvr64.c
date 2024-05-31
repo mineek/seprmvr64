@@ -438,7 +438,7 @@ int seprmvr64(int argc, char *argv[], char *ver)
 
     int skipacm = 0;
 
-    if(strcmp(ver, "12") == 0 || strcmp(ver, "13") == 0 || strcmp(ver, "14") == 0) {
+    if(strcmp(ver, "10") == 0 || strcmp(ver, "12") == 0 || strcmp(ver, "13") == 0 || strcmp(ver, "14") == 0) {
         printf("[*] Skipping ACM patch\n");
         skipacm=1;
         printf("[*] Skipping AMFI patch\n");
