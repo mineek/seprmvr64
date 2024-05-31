@@ -69,7 +69,7 @@ I am not responsible for any damage caused to anything, use at your own risk, th
 7. Extract your kernelcache using `img4 -i kernelcache -o kcache.raw`
 8. Now, use seprmvr64:
     * `gcc seprmvr64/seprmvr64.c -o seprmvr64`
-    * `./seprmvr64 kcache.raw kcache.patched`
+    * `./seprmvr64 kcache.raw kcache.patched -s <ios ver>` i.e. `./seprmvr64 kcache.raw kcache.patched -s 10`
 9. Create a kc.bpatch using `kerneldiff kcache.raw kcache.patched kc.bpatch`
 10. Create a img4 from your kernelcache using `img4 -i kernelcache -o kernelcache.img4 -M IM4M -T rkrn -P kc.bpatch`
 
