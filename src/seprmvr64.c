@@ -75,10 +75,40 @@ bool patch_sks(struct pf_patch_t *patch, uint32_t *stream) {
     return false;
 }
 
+void patch_sks2() {
+    struct mach_header_64 *sks_kext = macho_find_kext(kbuf, "com.apple.driver.AppleSEPKeyStore");
+    if (!sks_kext) return;
+    struct section_64 *sks_text = macho_find_section(sks_kext, "__TEXT_EXEC", "__text");
+    if (!sks_text) return;
+
+    void *sks_text_buf = (void *) sks_kext + sks_text->offset;
+    uint64_t sks_text_len = sks_text->size;
+
+    uint32_t str_matches[] = {
+        0x90000000, // adrp
+        0x91000000  // add
+    };
+
+    uint32_t str_masks[] = {
+        0x9f000000,
+        0xff800000
+    };
+
+    struct pf_patch_t sks_patch = pf_construct_patch(str_matches, str_masks, sizeof(str_matches) / sizeof(uint32_t), (void *) patch_sks);
+
+    struct pf_patch_t sks_patches[] = {
+        sks_patch
+    };
+
+    struct pf_patchset_t sks_patchset = pf_construct_patchset(sks_patches, sizeof(sks_patches) / sizeof(struct pf_patch_t), (void *) pf_find_maskmatch32);
+
+    pf_patchset_emit(sks_text_buf, sks_text_len, sks_patchset);
+}
+
 bool patch_smgr(struct pf_patch_t *patch, uint32_t *stream) {
     char *str = pf_follow_xref(kbuf, stream);
 
-    if (strncmp(str, "\"SEP Panic:", 11) == 0) {
+    if (strncmp(str, "\"SEP Panic:", 11) == 0 || strncmp(str, "SEP Panic: %s\n%s", strlen("SEP Panic: %s\n%s")) == 0) {
         uint32_t *begin = bof64(stream);
 
         begin[0] = 0x52800000;
@@ -131,7 +161,7 @@ bool patch_mesa(struct pf_patch_t *patch, uint32_t *stream) {
         (strcmp(str, "ERROR: %s: AssertMacros: %s (value = 0x%lx), %s file: %s, line: %d") == 0)) {
         uint32_t *begin = bof64(stream);
 
-        if (begin[6] == 0xb4000293) {
+        if (begin[6] == 0xb4000293 || begin[4] == 0xb40001a0) {
             printf("[+] Skipping AssertMacros at 0x%lx\n", macho_ptr_to_va(kbuf, begin));
 
             return false;
@@ -162,20 +192,23 @@ bool patch_acm(struct pf_patch_t *patch, uint32_t *stream) {
 
             printf("[+] Patched ACM at 0x%lx\n", macho_ptr_to_va(kbuf, begin));
         }
-    }
+    } else if (strncmp(str, "/Library/Caches/com.apple.xbs/Sources/AppleCredentialManager/AppleCredentialManager-", 84) == 0) {
+        str += 84;
+        while (str[-1] != '/') str++;
+        
+        if (strcmp(str, "AppleCredentialManager/AppleCredentialManager.cpp") == 0) {
+            uint32_t *begin = bof64(stream);
 
+            begin[0] = 0x52800000;
+            begin[1] = ret;
+
+            printf("[+] Patched ACM at 0x%lx\n", macho_ptr_to_va(kbuf, begin));
+        }
+    }
     return false;
 }
 
-void patch_sep() {
-    struct mach_header_64 *sks_kext = macho_find_kext(kbuf, "com.apple.driver.AppleSEPKeyStore");
-    if (!sks_kext) return;
-    struct section_64 *sks_text = macho_find_section(sks_kext, "__TEXT_EXEC", "__text");
-    if (!sks_text) return;
-
-    void *sks_text_buf = (void *) sks_kext + sks_text->offset;
-    uint64_t sks_text_len = sks_text->size;
-
+void patch_acm2() {
     uint32_t str_matches[] = {
         0x90000000, // adrp
         0x91000000  // add
@@ -186,15 +219,36 @@ void patch_sep() {
         0xff800000
     };
 
-    struct pf_patch_t sks_patch = pf_construct_patch(str_matches, str_masks, sizeof(str_matches) / sizeof(uint32_t), (void *) patch_sks);
+    struct mach_header_64 *acm_kext = macho_find_kext(kbuf, "com.apple.driver.AppleSEPCredentialManager");
+    if (!acm_kext) return;
+    struct section_64 *acm_text = macho_find_section(acm_kext, "__TEXT_EXEC", "__text");
+    if (!acm_text) return;
 
-    struct pf_patch_t sks_patches[] = {
-        sks_patch
+    void *acm_text_buf = (void *) acm_kext + acm_text->offset;
+    uint64_t acm_text_len = acm_text->size;
+
+
+    struct pf_patch_t acm_patch = pf_construct_patch(str_matches, str_masks, sizeof(str_matches) / sizeof(uint32_t), (void *) patch_acm);
+
+    struct pf_patch_t acm_patches[] = {
+        acm_patch
     };
 
-    struct pf_patchset_t sks_patchset = pf_construct_patchset(sks_patches, sizeof(sks_patches) / sizeof(struct pf_patch_t), (void *) pf_find_maskmatch32);
+    struct pf_patchset_t acm_patchset = pf_construct_patchset(acm_patches, sizeof(acm_patches) / sizeof(struct pf_patch_t), (void *) pf_find_maskmatch32);
 
-    pf_patchset_emit(sks_text_buf, sks_text_len, sks_patchset);
+    pf_patchset_emit(acm_text_buf, acm_text_len, acm_patchset);
+}
+
+void patch_sep() {
+    uint32_t str_matches[] = {
+        0x90000000, // adrp
+        0x91000000  // add
+    };
+
+    uint32_t str_masks[] = {
+        0x9f000000,
+        0xff800000
+    };
 
     struct mach_header_64 *smgr_kext = macho_find_kext(kbuf, "com.apple.driver.AppleSEPManager");
     if (!smgr_kext) return;
@@ -234,25 +288,6 @@ void patch_sep() {
     struct pf_patchset_t mesa_patchset = pf_construct_patchset(mesa_patches, sizeof(mesa_patches) / sizeof(struct pf_patch_t), (void *) pf_find_maskmatch32);
 
     pf_patchset_emit(mesa_text_buf, mesa_text_len, mesa_patchset);
-
-    struct mach_header_64 *acm_kext = macho_find_kext(kbuf, "com.apple.driver.AppleSEPCredentialManager");
-    if (!acm_kext) return;
-    struct section_64 *acm_text = macho_find_section(acm_kext, "__TEXT_EXEC", "__text");
-    if (!acm_text) return;
-
-    void *acm_text_buf = (void *) acm_kext + acm_text->offset;
-    uint64_t acm_text_len = acm_text->size;
-
-
-    struct pf_patch_t acm_patch = pf_construct_patch(str_matches, str_masks, sizeof(str_matches) / sizeof(uint32_t), (void *) patch_acm);
-
-    struct pf_patch_t acm_patches[] = {
-        acm_patch
-    };
-
-    struct pf_patchset_t acm_patchset = pf_construct_patchset(acm_patches, sizeof(acm_patches) / sizeof(struct pf_patch_t), (void *) pf_find_maskmatch32);
-
-    pf_patchset_emit(acm_text_buf, acm_text_len, acm_patchset);
 
     struct mach_header_64 *abs_kext = macho_find_kext(kbuf, "com.apple.driver.AppleBiometricSensor");
     if (!abs_kext) return;
@@ -344,8 +379,9 @@ void patch_amfi() {
     printf("[+] Patched AMFI at 0x%lx\n", trustcache->offset);
 }
 
-int main(int argc, char *argv[])
+int seprmvr64(int argc, char *argv[], char *ver)
 {
+    printf("version: %s\n", ver);
     printf("Starting seprmvr64 by Mineek\n");
     if (argc < 3)
     {
@@ -396,10 +432,55 @@ int main(int argc, char *argv[])
 
     patch_sep();
 
-    if (argc == 4 && !strcmp(argv[3], "--skip-amfi")) {
+    int skipsks = 0;
+
+    int skipamfi = 0;
+
+    int skipacm = 0;
+
+    if(strcmp(ver, "12") == 0 || strcmp(ver, "13") == 0 || strcmp(ver, "14") == 0) {
+        printf("[*] Skipping ACM patch\n");
+        skipacm=1;
         printf("[*] Skipping AMFI patch\n");
-    } else {
+        skipamfi=1;
+    }
+
+    if(strcmp(ver, "14") == 0) {
+        printf("[*] Skipping SKS patch\n");
+        skipsks=1;
+    }
+
+    for(int i=0;i<argc;i++) {
+        if(strcmp(argv[i], "--skip-amfi") == 0 && skipamfi == 0) {
+            printf("[*] Skipping AMFI patch\n");
+            skipamfi=1;
+        }
+    }
+
+    if (skipamfi == 0) {
         patch_amfi();
+    }
+
+    for(int i=0;i<argc;i++) {
+        if(strcmp(argv[i], "--skip-acm") == 0 && skipacm == 0) {
+            printf("[*] Skipping ACM patch\n");
+            skipacm=1;
+        }
+    }
+
+    if (skipacm == 0) {
+        patch_acm2();
+    }
+
+    for(int i=0;i<argc;i++) {
+        if(strcmp(argv[i], "--skip-sks") == 0 && skipsks == 0) {
+            printf("[*] Skipping SKS patch\n");
+            skipsks=1;
+        }
+    }
+
+    if (skipsks == 0) {
+        patch_sks2();
     }
 
     fp = fopen(out, "wb+");
